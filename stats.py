@@ -7,11 +7,6 @@ This is a program exploring the world of football management, mainly in the cont
 has a rich history of success and talent. The club has won a total of 27 La Liga titles, 31 Copa del Rey titles, 13 Supercopa de España titles, and 5 UEFA Champions League titles. Throughout this progarm
 it will exlore managing Barcelona and making descions that will impact the club's future.. 
 '''
-import pygame
-import random
-import time
-import sys
-import os
 import math
 
 # Dictionaries with player names
@@ -135,3 +130,22 @@ centerback_stats = {
         "physicality": 80
     }
 }
+
+competitions=["La Liga", "Champions League", "Copa del Rey", "Supercopa de España"] #List of competition 2024-2025 Season
+
+#List of teams in each competition in 2024-2025 season
+la_liga_teams=["FC Barcelona", "Real Madrid", "Atletico Madrid", "Real Sociedad", "Real Betis", "Athletic Bilbao", "Valencia", "Villarreal", "Celta Vigo", "Osasuna", "Getafe", "Girona", "Deportivo Alaves", "Leganes", "Mallorca", "Las Palmas", "Rayo Vallecano", "Espanyol", "Sevilla", "Real Vallladolid"]
+
+champions_league_teams = [
+    "Liverpool", "Barcelona", "Arsenal", "Inter Milan", "Atletico Madrid", "Bayer Leverkusen",
+    "LOSC Lille", "Atalanta", "Dortmund", "Real Madrid", "Bayern Munich", "AC Milan",
+    "PSV Eindhoven", "Manchester City", "Manchester United", "FC Porto", "Benfica",
+    "RB Leipzig", "Napoli", "Real Sociedad", "Paris Saint-Germain", "Monaco", "Brest",
+    "Feyenoord", "Juventus", "Celtic", "Sporting", "Club Brugge", "Dinamo Zagreb",
+    "VfB Stuttgart", "Shakhtar Donetsk", "Bologna", "Crvena Zvezda", "SK Sturm Graz",
+    "Sparta Prague", "RB Salzburg", "Slovan Bratislava", "Young Boys"
+]
+
+copa_del_rey_matchups=["Ourense vs Valencia", "Almeria vs Leganes", "Pontevedra vs Getafe", "Barcelona vs Real Betis", "Elche vs Atletico Madrid", "Athletic Bilbao vs Osasuna", "Real Sociedad vs Rayo Vallecano", "Real Madrid vs Celta Vigo"]
+
+supercopa_de_espana_matchups = ["Athletic Bilbao vs Barcelona", "Real Madrid vs Mallorca"]
