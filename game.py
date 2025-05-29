@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import time
 import numpy as np
+from game_manager import GameManager, Competition
 
 # Set page config
 st.set_page_config(
@@ -64,6 +65,12 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.1);
         padding: 15px;
         border-radius: 10px;
+        margin: 10px 0;
+    }
+    .standings-table {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 15px;
         margin: 10px 0;
     }
     </style>
@@ -161,6 +168,10 @@ MATCH_EVENTS = {
         "impact": -0.5
     }
 }
+
+# Initialize game manager
+if 'game_manager' not in st.session_state:
+    st.session_state.game_manager = GameManager()
 
 # Initialize session state
 if 'starting_11' not in st.session_state:
@@ -546,10 +557,11 @@ def display_match_result():
     st.title("Match Result")
     
     if st.session_state.match_result:
-        barca_score, opp_score = st.session_state.match_result
+        competition, opponent, barca_score, opp_score = st.session_state.match_result
         st.markdown(f"""
             <div class="match-result">
-                Barcelona {barca_score} - {opp_score} Opponent
+                {competition.value}<br>
+                Barcelona {barca_score} - {opp_score} {opponent}
             </div>
         """, unsafe_allow_html=True)
         
@@ -558,7 +570,7 @@ def display_match_result():
         elif barca_score < opp_score:
             st.error("Defeat 😢")
         else:
-            st.warning("Draw ��")
+            st.warning("Draw 🤝")
         
         # Display match events
         st.subheader("Match Events")
@@ -675,11 +687,86 @@ def display_stats():
     ])
     st.bar_chart(minutes_data.set_index('Player'))
 
+def display_standings():
+    """Display current standings for all competitions"""
+    st.title("Competition Standings")
+    
+    # Create tabs for each competition
+    tabs = st.tabs([comp.value for comp in Competition])
+    
+    for idx, tab in enumerate(tabs):
+        with tab:
+            st.markdown(f"<div class='standings-table'>", unsafe_allow_html=True)
+            
+            # Get the current competition
+            competition = list(Competition)[idx]
+            
+            # Add competition-specific information
+            if competition == Competition.LA_LIGA:
+                st.subheader("La Liga 2024-25")
+                st.info("38 games per team - 3 points for win, 1 for draw")
+                st.markdown("**Current Game Week:** " + str(st.session_state.game_week))
+            elif competition == Competition.CHAMPIONS_LEAGUE:
+                st.subheader("UEFA Champions League 2024-25")
+                st.info("New Format: 8 games in league phase, followed by knockout rounds")
+                st.markdown("**Current Stage:** League Phase")
+            elif competition == Competition.COPA_DEL_REY:
+                st.subheader("Copa del Rey 2024-25")
+                st.info("Single-elimination tournament - Round of 32")
+                st.markdown("**Current Stage:** Round of 32")
+            else:  # Supercopa
+                st.subheader("Supercopa de España 2024-25")
+                st.info("Four-team tournament - Semi-finals and Final")
+                st.markdown("**Current Stage:** Semi-finals")
+            
+            # Display the standings as a DataFrame
+            df = st.session_state.game_manager.get_standings_data(competition)
+            st.dataframe(
+                df.style.background_gradient(cmap='Blues', subset=['Points', 'Goal Difference']),
+                use_container_width=True
+            )
+            
+            # Add competition-specific notes
+            if competition == Competition.LA_LIGA:
+                st.markdown("""
+                    **Promotion/Relegation:**
+                    - Top 4: Champions League qualification
+                    - 5th-6th: Europa League qualification
+                    - Bottom 3: Relegation to Segunda División
+                """)
+            elif competition == Competition.CHAMPIONS_LEAGUE:
+                st.markdown("""
+                    **Qualification:**
+                    - Top 8: Direct qualification to Round of 16
+                    - 9th-24th: Play-off round
+                    - Bottom 12: Eliminated
+                """)
+            elif competition == Competition.COPA_DEL_REY:
+                st.markdown("""
+                    **Tournament Format:**
+                    - Single-elimination matches
+                    - Two-legged ties until semi-finals
+                    - Single match final
+                """)
+            else:  # Supercopa
+                st.markdown("""
+                    **Tournament Format:**
+                    - Semi-finals: La Liga champions vs Copa del Rey runners-up
+                    - Semi-finals: Copa del Rey winners vs La Liga runners-up
+                    - Single match final
+                """)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Add a refresh button for each competition
+            if st.button(f"Refresh {competition.value} Standings", key=f"refresh_{competition.value}"):
+                st.rerun()
+
 # Main app
 st.title("FC Barcelona Manager")
 
 # Sidebar navigation
-page = st.sidebar.radio("Navigation", ["Squad", "Select Team", "Play Match", "Statistics"])
+page = st.sidebar.radio("Navigation", ["Squad", "Select Team", "Play Match", "Statistics", "Standings"])
 
 if page == "Squad":
     display_squad()
@@ -688,13 +775,37 @@ elif page == "Select Team":
 elif page == "Play Match":
     if len(st.session_state.starting_11) == 11:
         st.subheader(f"Game Week {st.session_state.game_week}")
+        
+        # Competition selection
+        competition = st.selectbox(
+            "Select Competition",
+            [comp.value for comp in Competition]
+        )
+        competition = Competition(competition)
+        
+        # Get available opponents for the selected competition
+        opponents = [team for team in st.session_state.game_manager.standings[competition].keys() 
+                    if team != "FC Barcelona"]
+        
+        # Opponent selection
+        opponent = st.selectbox(
+            "Select Opponent",
+            opponents
+        )
+        
         if st.button("Play Match"):
             with st.spinner("Simulating match..."):
                 time.sleep(2)  # Add some drama
-                st.session_state.match_result = simulate_match(st.session_state.starting_11)
+                barca_score, opp_score = st.session_state.game_manager.simulate_match(
+                    competition, "FC Barcelona", opponent
+                )
+                st.session_state.match_result = (competition, opponent, barca_score, opp_score)
+        
         if st.session_state.match_result:
             display_match_result()
     else:
         st.error("Please select exactly 11 players first!")
 elif page == "Statistics":
-    display_stats() 
+    display_stats()
+elif page == "Standings":
+    display_standings() 
